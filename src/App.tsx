@@ -354,6 +354,7 @@ export default function App() {
               <img 
                 src={PORTFOLIO_DATA.profile.profileImage} 
                 alt={PORTFOLIO_DATA.profile.fullName} 
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-top rounded-3xl shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
               />
               <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-brand-accent rounded-3xl -z-10" />
@@ -426,6 +427,7 @@ export default function App() {
                 <img 
                   src={PORTFOLIO_DATA.profile.profileImage} 
                   alt="About Me" 
+                  referrerPolicy="no-referrer"
                   className="rounded-[32px] w-full object-cover object-top aspect-[4/5]"
                 />
             </div>
@@ -532,6 +534,7 @@ export default function App() {
                     <img 
                       src={project.image} 
                       alt={project.title} 
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className="absolute top-4 right-4 z-20">
