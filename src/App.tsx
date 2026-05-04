@@ -1,12 +1,124 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { 
   Home, User, FileText, Image as ImageIcon, Server, Mail, 
   Github, Linkedin, Instagram, Twitter, Phone, MapPin, 
   Download, MessageSquare, Check, Code, Palette, Layers,
-  Menu, X, TrendingUp, Github as GithubIcon, LucideIcon
+  Menu, X, TrendingUp, Github as GithubIcon, LucideIcon,
+  Send, Loader2, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
+import { jsPDF } from "jspdf";
 import { PORTFOLIO_DATA } from './constants';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+const downloadResume = () => {
+  const doc = new jsPDF();
+  const data = PORTFOLIO_DATA;
+  
+  // Professional Resume Layout
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.text(data.profile.fullName.toUpperCase(), 105, 20, { align: 'center' });
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Lucknow, Uttar Pradesh | ${data.profile.phone} | ${data.profile.email}`, 105, 28, { align: 'center' });
+  
+  // Line
+  doc.setLineWidth(0.5);
+  doc.line(20, 32, 190, 32);
+  
+  let y = 40;
+  
+  // Education
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("EDUCATION", 20, y);
+  y += 7;
+  doc.setLineWidth(0.2);
+  doc.line(20, y - 2, 190, y - 2);
+  
+  (data as any).education.forEach((edu: any) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(edu.institution, 20, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(edu.duration, 190, y, { align: 'right' });
+    y += 5;
+    doc.setFont("helvetica", "italic");
+    doc.text(`${edu.degree} - ${edu.details}`, 20, y);
+    y += 8;
+  });
+  
+  // Skills
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("TECHNICAL SKILLS", 20, y);
+  y += 7;
+  doc.line(20, y - 2, 190, y - 2);
+  
+  doc.setFontSize(11);
+  const frontend = data.skills.frontend.map(s => s.name).join(", ");
+  const backend = data.skills.backend.map(s => s.name).join(", ");
+  
+  doc.setFont("helvetica", "bold");
+  doc.text("Frontend: ", 20, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(frontend, 45, y);
+  y += 6;
+  
+  doc.setFont("helvetica", "bold");
+  doc.text("Backend: ", 20, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(backend, 45, y);
+  y += 6;
+  
+  doc.setFont("helvetica", "bold");
+  doc.text("Languages: ", 20, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(data.profile.languages.join(", ") + ", Java, SQL", 45, y);
+  y += 10;
+  
+  // Projects
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("PROJECTS", 20, y);
+  y += 7;
+  doc.line(20, y - 2, 190, y - 2);
+  
+  data.projects.forEach((proj: any) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(proj.title, 20, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    const splitDesc = doc.splitTextToSize(proj.description, 160);
+    doc.text(splitDesc, 20, y);
+    y += (splitDesc.length * 5) + 3;
+  });
+  
+  // Certifications
+  if ((data as any).certifications) {
+    y += 5;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("CERTIFICATIONS", 20, y);
+    y += 7;
+    doc.line(20, y - 2, 190, y - 2);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    (data as any).certifications.forEach((cert: string) => {
+      doc.text(`• ${cert}`, 20, y);
+      y += 6;
+    });
+  }
+
+  doc.save(`${data.profile.fullName.replace(" ", "_")}_Resume.pdf`);
+};
 
 const IconMap: { [key: string]: LucideIcon } = {
   Home, User, FileText, ImageIcon, Server, Mail, Github, Linkedin, Instagram, Twitter, 
@@ -90,11 +202,50 @@ export default function App() {
   ];
 
   const [projectFilter, setProjectFilter] = useState('All');
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
 
   const categories = ['All', ...new Set(PORTFOLIO_DATA.projects.map(p => p.category))];
   const filteredProjects = projectFilter === 'All' 
     ? PORTFOLIO_DATA.projects 
     : PORTFOLIO_DATA.projects.filter(p => p.category === projectFilter);
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleContactSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setFormStatus('loading');
+    setAiResponse(null);
+
+    try {
+      // Use Gemini to generate a personalized "Instant Response"
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `You are an AI assistant for Dhannajay Gupta's portfolio. 
+        A visitor named ${formData.name} (${formData.email}) sent a message about "${formData.subject}": 
+        "${formData.message}"
+        
+        Write a short, professional, and friendly "Instant Automated Response" as if you were Dhannajay's assistant. 
+        Acknowledge the message and say Dhannajay will get back to them soon. Keep it under 60 words.`,
+      });
+
+      setAiResponse(response.text);
+      setFormStatus('success');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      console.error("Form submission failed:", error);
+      setFormStatus('error');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white selection:bg-brand-accent/30">
@@ -172,7 +323,13 @@ export default function App() {
             </p>
             <div className="flex flex-wrap gap-4">
               <a href="#projects" className="btn-primary">View My Work</a>
-              <a href="#contact" className="btn-outline">Get In Touch</a>
+              <button 
+                onClick={downloadResume}
+                className="btn-outline flex items-center gap-2 group transition-all"
+              >
+                <Download size={18} className="group-hover:translate-y-0.5 transition-transform" />
+                Resume
+              </button>
             </div>
             
             <div className="mt-12 flex gap-6 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all">
@@ -246,6 +403,20 @@ export default function App() {
                  <span className="text-[10px] uppercase tracking-widest text-gray-400">Languages</span>
                  <p className="text-sm font-medium text-brand-primary">{PORTFOLIO_DATA.profile.languages.join(', ')}</p>
                </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-4">
+              <button 
+                onClick={downloadResume}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Download size={18} />
+                Download Resume
+              </button>
+              <a href="#contact" className="btn-outline flex items-center gap-2">
+                <MessageSquare size={18} />
+                Let's Talk
+              </a>
             </div>
           </motion.div>
 
@@ -438,31 +609,90 @@ export default function App() {
           </div>
 
           <div className="lg:col-span-3">
-             <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+             <form className="space-y-6" onSubmit={handleContactSubmit}>
                <div className="grid md:grid-cols-2 gap-6">
                  <input 
                   type="text" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
                   placeholder="Your Name" 
+                  required
                   className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent transition-all"
                  />
                  <input 
                   type="email" 
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   placeholder="Your Email" 
+                  required
                   className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent transition-all"
                  />
                </div>
                <input 
                   type="text" 
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleInputChange}
                   placeholder="Subject" 
+                  required
                   className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent transition-all"
                />
                <textarea 
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
                   rows={6} 
                   placeholder="Message" 
+                  required
                   className="w-full px-6 py-4 rounded-2xl bg-gray-50 border border-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-accent/20 focus:border-brand-accent transition-all resize-none"
                />
-               <button type="submit" className="w-full md:w-auto btn-primary py-4 px-10">
-                 Send Message
+               
+               <AnimatePresence>
+                 {formStatus === 'success' && aiResponse && (
+                   <motion.div 
+                     initial={{ opacity: 0, height: 0 }}
+                     animate={{ opacity: 1, height: 'auto' }}
+                     exit={{ opacity: 0, height: 0 }}
+                     className="p-6 bg-brand-accent/5 border border-brand-accent/10 rounded-2xl"
+                   >
+                     <div className="flex items-center gap-2 text-brand-accent font-semibold mb-2">
+                       <Sparkles size={16} />
+                       AI Assistant Reply
+                     </div>
+                     <p className="text-sm text-gray-600 leading-relaxed italic">
+                       "{aiResponse}"
+                     </p>
+                   </motion.div>
+                 )}
+                 {formStatus === 'error' && (
+                   <motion.p 
+                     initial={{ opacity: 0 }}
+                     animate={{ opacity: 1 }}
+                     className="text-red-500 text-sm font-medium"
+                   >
+                     Something went wrong. Please try again.
+                   </motion.p>
+                 )}
+               </AnimatePresence>
+
+               <button 
+                 type="submit" 
+                 disabled={formStatus === 'loading'}
+                 className="w-full md:w-auto btn-primary py-4 px-10 flex items-center justify-center gap-2 disabled:opacity-50"
+               >
+                 {formStatus === 'loading' ? (
+                   <>
+                     <Loader2 size={20} className="animate-spin" />
+                     Sending...
+                   </>
+                 ) : (
+                   <>
+                     <Send size={20} />
+                     Send Message
+                   </>
+                 )}
                </button>
              </form>
           </div>

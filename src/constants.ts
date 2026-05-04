@@ -17,12 +17,37 @@ export const PORTFOLIO_DATA = {
     location: "Lucknow, Uttar Pradesh",
     specialization: "UI/UX Design & Full Stack Development",
     experienceLevel: "Fresher (0 Years)",
-    education: "Computer Science and Engineering, GITM",
+    education: "B.Tech in Computer Science and Engineering, GITM (CGPA: 7.56)",
     languages: ["English", "Hindi"],
     profileImage: "https://cdn.phototourl.com/free/2026-05-04-ccc4cf54-74e2-4f7a-ad3e-90122ded9bbe.jpg", 
   },
+  education: [
+    {
+      institution: "Goel Institute of Technology and Management",
+      degree: "B.Tech - Computer Science and Engineering",
+      duration: "09/2022 – 06/2026",
+      details: "CGPA: 7.56"
+    },
+    {
+      institution: "Children Public Intermediate College",
+      degree: "Class 12th",
+      duration: "04/2021 – 06/2022",
+      details: "Percentage: 70%"
+    },
+    {
+      institution: "Children Public Intermediate College",
+      degree: "Class 10th",
+      duration: "04/2019 – 06/2020",
+      details: "Percentage: 82.5%"
+    }
+  ],
+  certifications: [
+    "Mastering Data Structure and Algorithms - LearnYard",
+    "Coding Competition winner",
+    "Softpro India Training Certificate"
+  ],
   stats: [
-    { label: "Projects Completed", value: "10+" },
+    { label: "Projects Completed", value: "6+" },
     { label: "Experience", value: "Fresher" },
     { label: "Satisfaction", value: "98%" },
   ],
