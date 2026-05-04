@@ -11,7 +11,13 @@ import { GoogleGenAI } from "@google/genai";
 import { jsPDF } from "jspdf";
 import { PORTFOLIO_DATA } from './constants';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAi = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === 'undefined') {
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const downloadResume = () => {
   const doc = new jsPDF();
@@ -173,6 +179,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [scrolled, setScrolled] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -227,6 +234,11 @@ export default function App() {
     setAiResponse(null);
 
     try {
+      const ai = getAi();
+      if (!ai) {
+        throw new Error("AI service is currently unavailable. Please contact me directly via email.");
+      }
+
       // Use Gemini to generate a personalized "Instant Response"
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -336,7 +348,13 @@ export default function App() {
               {PORTFOLIO_DATA.socials.map((social) => {
                 const Icon = IconMap[social.name] || GithubIcon;
                 return (
-                  <a key={social.name} href={social.url} className="text-brand-primary hover:text-brand-accent transition-colors">
+                  <a 
+                    key={social.name} 
+                    href={social.url} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-primary hover:text-brand-accent transition-colors"
+                  >
                     <Icon size={24} />
                   </a>
                 );
@@ -352,9 +370,10 @@ export default function App() {
           >
             <div className="w-full aspect-square max-w-md mx-auto relative z-10">
               <img 
-                src={PORTFOLIO_DATA.profile.profileImage} 
+                src={imageError ? 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=800' : PORTFOLIO_DATA.profile.profileImage} 
                 alt={PORTFOLIO_DATA.profile.fullName} 
                 referrerPolicy="no-referrer"
+                onError={() => setImageError(true)}
                 className="w-full h-full object-cover object-top rounded-3xl shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
               />
               <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-brand-accent rounded-3xl -z-10" />
@@ -425,9 +444,10 @@ export default function App() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full aspect-square bg-blue-100/30 rounded-full blur-3xl" />
             <div className="relative z-10 glass-card p-4 rounded-[40px] rotate-3 hover:rotate-0 transition-transform duration-500">
                 <img 
-                  src={PORTFOLIO_DATA.profile.profileImage} 
+                  src={imageError ? 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=800' : PORTFOLIO_DATA.profile.profileImage} 
                   alt="About Me" 
                   referrerPolicy="no-referrer"
+                  onError={() => setImageError(true)}
                   className="rounded-[32px] w-full object-cover object-top aspect-[4/5]"
                 />
             </div>
