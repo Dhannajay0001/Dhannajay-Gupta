@@ -20,6 +20,7 @@ export const PORTFOLIO_DATA = {
     education: "B.Tech in Computer Science and Engineering, GITM (CGPA: 7.56)",
     languages: ["English", "Hindi"],
     profileImage: "https://cdn.phototourl.com/free/2026-05-04-ccc4cf54-74e2-4f7a-ad3e-90122ded9bbe.jpg", 
+    resumeUrl: "https://www.image2url.com/r2/default/documents/1777917236801-1b0daa4c-a01e-45c6-8f2f-0a71ef71910e.pdf"
   },
   education: [
     {

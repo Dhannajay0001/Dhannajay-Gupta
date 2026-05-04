@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
-import { jsPDF } from "jspdf";
 import { PORTFOLIO_DATA } from './constants';
 
 const getAi = () => {
@@ -17,113 +16,6 @@ const getAi = () => {
     return null;
   }
   return new GoogleGenAI({ apiKey });
-};
-
-const downloadResume = () => {
-  const doc = new jsPDF();
-  const data = PORTFOLIO_DATA;
-  
-  // Professional Resume Layout
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.text(data.profile.fullName.toUpperCase(), 105, 20, { align: 'center' });
-  
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Lucknow, Uttar Pradesh | ${data.profile.phone} | ${data.profile.email}`, 105, 28, { align: 'center' });
-  
-  // Line
-  doc.setLineWidth(0.5);
-  doc.line(20, 32, 190, 32);
-  
-  let y = 40;
-  
-  // Education
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("EDUCATION", 20, y);
-  y += 7;
-  doc.setLineWidth(0.2);
-  doc.line(20, y - 2, 190, y - 2);
-  
-  (data as any).education.forEach((edu: any) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(edu.institution, 20, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(edu.duration, 190, y, { align: 'right' });
-    y += 5;
-    doc.setFont("helvetica", "italic");
-    doc.text(`${edu.degree} - ${edu.details}`, 20, y);
-    y += 8;
-  });
-  
-  // Skills
-  y += 5;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("TECHNICAL SKILLS", 20, y);
-  y += 7;
-  doc.line(20, y - 2, 190, y - 2);
-  
-  doc.setFontSize(11);
-  const frontend = data.skills.frontend.map(s => s.name).join(", ");
-  const backend = data.skills.backend.map(s => s.name).join(", ");
-  
-  doc.setFont("helvetica", "bold");
-  doc.text("Frontend: ", 20, y);
-  doc.setFont("helvetica", "normal");
-  doc.text(frontend, 45, y);
-  y += 6;
-  
-  doc.setFont("helvetica", "bold");
-  doc.text("Backend: ", 20, y);
-  doc.setFont("helvetica", "normal");
-  doc.text(backend, 45, y);
-  y += 6;
-  
-  doc.setFont("helvetica", "bold");
-  doc.text("Languages: ", 20, y);
-  doc.setFont("helvetica", "normal");
-  doc.text(data.profile.languages.join(", ") + ", Java, SQL", 45, y);
-  y += 10;
-  
-  // Projects
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("PROJECTS", 20, y);
-  y += 7;
-  doc.line(20, y - 2, 190, y - 2);
-  
-  data.projects.forEach((proj: any) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(proj.title, 20, y);
-    y += 5;
-    doc.setFont("helvetica", "normal");
-    const splitDesc = doc.splitTextToSize(proj.description, 160);
-    doc.text(splitDesc, 20, y);
-    y += (splitDesc.length * 5) + 3;
-  });
-  
-  // Certifications
-  if ((data as any).certifications) {
-    y += 5;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("CERTIFICATIONS", 20, y);
-    y += 7;
-    doc.line(20, y - 2, 190, y - 2);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    (data as any).certifications.forEach((cert: string) => {
-      doc.text(`• ${cert}`, 20, y);
-      y += 6;
-    });
-  }
-
-  doc.save(`${data.profile.fullName.replace(" ", "_")}_Resume.pdf`);
 };
 
 const IconMap: { [key: string]: LucideIcon } = {
@@ -335,13 +227,15 @@ export default function App() {
             </p>
             <div className="flex flex-wrap gap-4">
               <a href="#projects" className="btn-primary">View My Work</a>
-              <button 
-                onClick={downloadResume}
+              <a 
+                href={PORTFOLIO_DATA.profile.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn-outline flex items-center gap-2 group transition-all"
               >
-                <Download size={18} className="group-hover:translate-y-0.5 transition-transform" />
-                Resume
-              </button>
+                <FileText size={18} className="group-hover:scale-110 transition-transform" />
+                View Resume
+              </a>
             </div>
             
             <div className="mt-12 flex gap-6 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all">
@@ -426,13 +320,15 @@ export default function App() {
             </div>
 
             <div className="flex flex-wrap gap-4 pt-4">
-              <button 
-                onClick={downloadResume}
+              <a 
+                href={PORTFOLIO_DATA.profile.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn-primary flex items-center gap-2"
               >
-                <Download size={18} />
-                Download Resume
-              </button>
+                <FileText size={18} />
+                View Resume
+              </a>
               <a href="#contact" className="btn-outline flex items-center gap-2">
                 <MessageSquare size={18} />
                 Let's Talk
