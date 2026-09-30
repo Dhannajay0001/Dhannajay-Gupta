@@ -1,0 +1,7 @@
+# robots.txt for https://dhannajay-gupta.vercel.app/
+User-agent: *
+Allow: /
+
+# Host & Sitemap specification
+Host: https://dhannajay-gupta.vercel.app
+Sitemap: https://dhannajay-gupta.vercel.app/sitemap.xml
